@@ -1,0 +1,44 @@
+<?php
+require_once __DIR__ . '/functions.php';
+$pageTitle = $pageTitle ?? 'MathKids';
+$user = current_user();
+$currentScript = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$basePath = (strpos($currentScript, '/admin/') !== false) ? '../' : '';
+?>
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= e($pageTitle) ?> · MathKids</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="<?= $basePath ?>assets/css/style.css">
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="brand" href="<?= $basePath ?><?= is_logged_in() ? 'dashboard.php' : 'index.php' ?>"><span
+        class="brand-mark">∑</span> Math<span>Kids</span></a>
+    <button class="nav-toggle" aria-label="Buka menu"
+      onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <nav class="nav-links">
+      <?php if (is_logged_in()): ?>
+        <a href="<?= $basePath ?>dashboard.php">Beranda</a>
+        <a href="<?= $basePath ?>materi.php">Materi</a>
+        <a href="<?= $basePath ?>kuis.php">Kuis</a>
+        <a href="<?= $basePath ?>game.php">Game</a>
+        <a href="<?= $basePath ?>riwayat.php">Riwayat</a>
+        <?php if (($user['role'] ?? '') === 'admin'): ?><a href="<?= $basePath ?>admin/index.php">Admin</a><?php endif; ?>
+        <span class="nav-user">👋 <?= e($user['name'] ?? '') ?></span>
+        <a class="btn btn-small btn-outline" href="<?= $basePath ?>logout.php">Keluar</a>
+      <?php else: ?>
+        <a href="<?= $basePath ?>login.php">Masuk</a><a class="btn btn-small" href="<?= $basePath ?>register.php">Daftar
+          Gratis</a>
+      <?php endif; ?>
+    </nav>
+  </header>
+  <main class="container">
+    <?php if ($f = get_flash()): ?>
+      <div class="alert <?= e($f['type']) ?>"><?= e($f['message']) ?></div><?php endif; ?>

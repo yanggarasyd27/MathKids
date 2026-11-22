@@ -1,0 +1,33 @@
+<?php
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_admin();
+$rows = $pdo->query("SELECT u.id,u.name,u.email,u.class,COUNT(q.id) attempts,COALESCE(ROUND(AVG(q.score)),0) avg_score,COALESCE(MAX(q.score),0) best FROM users u LEFT JOIN quiz_results q ON q.user_id=u.id WHERE u.role='student' GROUP BY u.id ORDER BY u.created_at DESC")->fetchAll();
+$pageTitle = 'Data Siswa';
+require __DIR__ . '/../includes/header.php';
+?>
+<div class="page-title">
+    <h1>Data Siswa 👩‍🎓</h1>
+    <p>Ringkasan aktivitas dan hasil belajar siswa.</p>
+</div>
+<div class="table-wrap">
+    <table>
+        <tr>
+            <th>Nama</th>
+            <th>Email</th>
+            <th>Kelas</th>
+            <th>Jumlah Kuis</th>
+            <th>Rata-rata</th>
+            <th>Terbaik</th>
+        </tr><?php foreach ($rows as $r): ?>
+            <tr>
+                <td><?= e($r['name']) ?></td>
+                <td><?= e($r['email']) ?></td>
+                <td><?= $r['class'] ?></td>
+                <td><?= $r['attempts'] ?></td>
+                <td><?= $r['avg_score'] ?></td>
+                <td><?= $r['best'] ?></td>
+            </tr><?php endforeach; ?>
+    </table>
+</div>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

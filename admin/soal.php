@@ -1,0 +1,69 @@
+<?php
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_admin();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
+    $action = $_POST['action'] ?? '';
+    if ($action === 'save') {
+        $data = [trim($_POST['question']), (int) $_POST['class_level'], (int) $_POST['category_id'], trim($_POST['a']), trim($_POST['b']), trim($_POST['c']), trim($_POST['d']), $_POST['correct_option']];
+        $q = $pdo->prepare('INSERT INTO questions(question,class_level,category_id,option_a,option_b,option_c,option_d,correct_option) VALUES(?,?,?,?,?,?,?,?)');
+        $q->execute($data);
+        flash('Soal berhasil ditambahkan.');
+    }
+    if ($action === 'delete') {
+        $q = $pdo->prepare('DELETE FROM questions WHERE id=?');
+        $q->execute([(int) $_POST['id']]);
+        flash('Soal dihapus.');
+    }
+    redirect('soal.php');
+}
+$rows = $pdo->query('SELECT q.*,c.name category_name FROM questions q LEFT JOIN categories c ON c.id=q.category_id ORDER BY q.class_level,q.id DESC')->fetchAll();
+$cats = $pdo->query('SELECT * FROM categories')->fetchAll();
+$pageTitle = 'Kelola Soal';
+require __DIR__ . '/../includes/header.php';
+?>
+<div class="page-title">
+    <h1>Bank Soal</h1>
+    <p>Tambahkan soal pilihan ganda untuk kuis siswa.</p>
+</div>
+<div class="card">
+    <form method="post"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden"
+            name="action" value="save"><label>Pertanyaan</label><textarea name="question" rows="2"
+            required></textarea><label>Kelas</label><select name="class_level"><?php for ($i = 1; $i <= 6; $i++): ?>
+                <option value="<?= $i ?>">Kelas <?= $i ?></option><?php endfor; ?>
+        </select><label>Kategori</label><select name="category_id"><?php foreach ($cats as $c): ?>
+                <option value="<?= $c['id'] ?>"><?= e($c['name']) ?></option><?php endforeach; ?>
+        </select>
+        <?php foreach (['a', 'b', 'c', 'd'] as $o): ?><label>Jawaban <?= strtoupper($o) ?></label><input name="<?= $o ?>"
+                required><?php endforeach; ?><label>Jawaban benar</label><select name="correct_option">
+            <option>A</option>
+            <option>B</option>
+            <option>C</option>
+            <option>D</option>
+        </select><button class="btn" style="margin-top:15px">Tambah Soal</button></form>
+</div>
+<div class="section-head">
+    <h2>Daftar Soal (<?= count($rows) ?>)</h2>
+</div>
+<div class="table-wrap">
+    <table>
+        <tr>
+            <th>Pertanyaan</th>
+            <th>Kelas</th>
+            <th>Kunci</th>
+            <th>Aksi</th>
+        </tr><?php foreach ($rows as $r): ?>
+            <tr>
+                <td><?= e($r['question']) ?></td>
+                <td><?= $r['class_level'] ?></td>
+                <td><?= e($r['correct_option']) ?></td>
+                <td>
+                    <form method="post"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden"
+                            name="action" value="delete"><input type="hidden" name="id" value="<?= $r['id'] ?>"><button
+                            class="badge" data-confirm="Hapus soal ini?">Hapus</button></form>
+                </td>
+            </tr><?php endforeach; ?>
+    </table>
+</div>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

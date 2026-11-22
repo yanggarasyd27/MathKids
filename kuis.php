@@ -1,0 +1,31 @@
+<?php
+require_once 'config/database.php'; require_once 'includes/functions.php'; require_login();
+$u=current_user(); $result=null; $questions=[];
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_quiz'])) {
+ verify_csrf(); $ids=$_POST['question_ids']??[]; $answers=$_POST['answer']??[];
+ if (!$ids || count($ids)>30) { flash('Kuis tidak valid.','error'); redirect('kuis.php'); }
+ $marks=0; $detail=[];
+ $in=implode(',',array_fill(0,count($ids),'?'));
+ $q=$pdo->prepare("SELECT id,correct_option FROM questions WHERE id IN ($in) AND is_published=1"); $q->execute(array_map('intval',$ids)); $correct=$q->fetchAll();
+ $map=[]; foreach($correct as $c) $map[$c['id']]=$c['correct_option'];
+ foreach($ids as $id){$id=(int)$id;$ans=$answers[$id]??'';$ok=isset($map[$id]) && $ans===$map[$id];if($ok)$marks++;$detail[]=[$id,$ans,$ok];}
+ $total=count($ids);$score=(int)round(($marks/$total)*100);
+ $q=$pdo->prepare('INSERT INTO quiz_results(user_id,score,total_questions,correct_answers) VALUES(?,?,?,?)');$q->execute([$u['id'],$score,$total,$marks]);$resultId=(int)$pdo->lastInsertId();
+ $ins=$pdo->prepare('INSERT INTO quiz_answers(result_id,question_id,selected_option,is_correct) VALUES(?,?,?,?)');
+ foreach($detail as $d)$ins->execute([$resultId,$d[0],$d[1],$d[2]?1:0]);
+ $result=['score'=>$score,'correct'=>$marks,'total'=>$total];
+} else {
+ $class=(int)($u['class']??1);
+ $q=$pdo->prepare('SELECT q.*,c.name category_name FROM questions q LEFT JOIN categories c ON c.id=q.category_id WHERE q.is_published=1 AND q.class_level=? ORDER BY RAND() LIMIT 10');$q->execute([$class]);$questions=$q->fetchAll();
+}
+$pageTitle='Kuis'; require 'includes/header.php';
+?>
+<div class="page-title"><div class="eyebrow">Uji kemampuanmu</div><h1>Kuis Matematika 🧠</h1><p>Jawab soal sesuai kelasmu dan kumpulkan poin.</p></div>
+<?php if($result): ?><div class="card center quiz-box"><div style="font-size:55px">🎉</div><h2>Hebat! Kuis selesai.</h2><div class="big-score"><?= $result['score'] ?></div><p>Nilai kamu · <?= $result['correct'] ?> benar dari <?= $result['total'] ?> soal</p><a class="btn" href="kuis.php">Coba Lagi</a> <a class="btn btn-outline" href="riwayat.php">Lihat Riwayat</a></div>
+<?php elseif(!$questions): ?><div class="card empty">Belum ada soal untuk kelasmu. Silakan kembali lagi nanti.</div>
+<?php else: ?><form method="post" class="card quiz-box"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="submit_quiz" value="1">
+<div style="display:flex;justify-content:space-between"><span class="badge">Kelas <?= (int)$u['class'] ?></span><span class="muted"><?= count($questions) ?> soal</span></div>
+<?php foreach($questions as $i=>$q): ?><div style="margin-top:25px"><span class="badge">Soal <?= $i+1 ?></span><div class="question"><?= e($q['question']) ?></div><input type="hidden" name="question_ids[]" value="<?= (int)$q['id'] ?>">
+<div class="answers"><?php foreach(['A','B','C','D'] as $opt): if(!empty($q['option_'.strtolower($opt)])): ?><label class="answer"><input type="radio" required name="answer[<?= (int)$q['id'] ?>]" value="<?= $opt ?>"> <?= $opt ?>. <?= e($q['option_'.strtolower($opt)]) ?></label><?php endif; endforeach; ?></div></div><?php endforeach; ?>
+<button class="btn" style="width:100%;margin-top:25px">Kirim Jawaban ✓</button></form><?php endif; ?>
+<?php require 'includes/footer.php'; ?>

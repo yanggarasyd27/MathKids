@@ -1,0 +1,22 @@
+
+# Rahasia database
+/config/database.php
+.env
+.env.*
+
+# Database lokal dan backup
+/database/*.db
+/database/*.sqlite
+/database/*backup*.sql
+/database/*dump*.sql
+
+# File log
+*.log
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# File sementara
+.DS_Store
+Thumbs.db

@@ -1,0 +1,219 @@
+<?php
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_admin();
+
+$students = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetchColumn();
+$materials = (int) $pdo->query("SELECT COUNT(*) FROM materials")->fetchColumn();
+$questions = (int) $pdo->query("SELECT COUNT(*) FROM questions")->fetchColumn();
+$attempts = (int) $pdo->query("SELECT COUNT(*) FROM quiz_results")->fetchColumn();
+$avgScore = (int) $pdo->query("SELECT COALESCE(ROUND(AVG(score)),0) FROM quiz_results")->fetchColumn();
+$activeStudents = (int) $pdo->query("SELECT COUNT(DISTINCT user_id) FROM quiz_results WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn();
+
+$recent = $pdo->query("
+ SELECT qr.id, qr.score, qr.correct_answers, qr.total_questions, qr.created_at,
+        u.name, u.class
+ FROM quiz_results qr
+ JOIN users u ON u.id=qr.user_id
+ ORDER BY qr.created_at DESC LIMIT 6
+")->fetchAll();
+
+$newStudents = $pdo->query("
+ SELECT name,email,class,created_at
+ FROM users WHERE role='student'
+ ORDER BY created_at DESC LIMIT 5
+")->fetchAll();
+
+$weekly = $pdo->query("
+ SELECT DATE(created_at) day, ROUND(AVG(score)) avg_score, COUNT(*) attempts
+ FROM quiz_results
+ WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+ GROUP BY DATE(created_at)
+ ORDER BY day
+")->fetchAll();
+
+$weekMap = [];
+foreach ($weekly as $w)
+    $weekMap[$w['day']] = $w;
+$chart = [];
+for ($i = 6; $i >= 0; $i--) {
+    $day = date('Y-m-d', strtotime("-$i days"));
+    $chart[] = [
+        'label' => date('D', strtotime($day)),
+        'score' => (int) ($weekMap[$day]['avg_score'] ?? 0),
+        'attempts' => (int) ($weekMap[$day]['attempts'] ?? 0)
+    ];
+}
+$maxAttempts = max(1, ...array_column($chart, 'attempts'));
+
+$pageTitle = 'Admin Dashboard';
+require __DIR__ . '/../includes/header.php';
+?>
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-side-label">MENU ADMIN</div>
+        <a class="admin-side-link active" href="index.php"><span>▦</span> Dashboard</a>
+        <a class="admin-side-link" href="siswa.php"><span>♙</span> Data Siswa</a>
+        <a class="admin-side-link" href="materi.php"><span>▤</span> Kelola Materi</a>
+        <a class="admin-side-link" href="soal.php"><span>✎</span> Bank Soal</a>
+        <div class="admin-side-label admin-side-spaced">LAINNYA</div>
+        <a class="admin-side-link" href="../dashboard.php"><span>↗</span> Lihat Website</a>
+        <a class="admin-side-link" href="../logout.php"><span>⇥</span> Keluar</a>
+        <div class="admin-side-note">
+            <div class="admin-side-note-icon">✨</div><strong>MathKids Admin</strong>
+            <p>Kelola pengalaman belajar yang menyenangkan.</p>
+        </div>
+    </aside>
+
+    <section class="admin-main">
+        <div class="admin-welcome">
+            <div>
+                <div class="eyebrow">OVERVIEW · ADMINISTRATOR</div>
+                <h1>Dashboard Admin</h1>
+                <p>Selamat datang kembali, <?= e(current_user()['name'] ?? 'Admin') ?>. Berikut ringkasan MathKids hari
+                    ini.</p>
+            </div>
+            <div class="admin-date">📅 <?= e(date('d F Y')) ?></div>
+        </div>
+
+        <div class="admin-stat-grid">
+            <article class="admin-stat-card">
+                <div class="admin-stat-top"><span>Total Siswa</span><span class="admin-stat-icon blue">♙</span></div>
+                <strong><?= number_format($students) ?></strong><small>Seluruh akun siswa terdaftar</small>
+            </article>
+            <article class="admin-stat-card">
+                <div class="admin-stat-top"><span>Total Materi</span><span class="admin-stat-icon purple">▤</span></div>
+                <strong><?= number_format($materials) ?></strong><small>Konten pembelajaran tersedia</small>
+            </article>
+            <article class="admin-stat-card">
+                <div class="admin-stat-top"><span>Bank Soal</span><span class="admin-stat-icon orange">✎</span></div>
+                <strong><?= number_format($questions) ?></strong><small>Soal kuis tersimpan</small>
+            </article>
+            <article class="admin-stat-card">
+                <div class="admin-stat-top"><span>Kuis Dikerjakan</span><span class="admin-stat-icon green">✓</span>
+                </div><strong><?= number_format($attempts) ?></strong><small>Total percobaan seluruh siswa</small>
+            </article>
+        </div>
+
+        <div class="admin-content-grid">
+            <article class="admin-panel admin-chart-panel">
+                <div class="admin-panel-heading">
+                    <div>
+                        <h2>Aktivitas Belajar</h2>
+                        <p>Rata-rata nilai dan jumlah kuis selama 7 hari terakhir</p>
+                    </div><span class="admin-chip">7 hari terakhir</span>
+                </div>
+                <div class="admin-chart-legend"><span><i class="legend-score"></i> Rata-rata nilai</span><span><i
+                            class="legend-attempt"></i> Jumlah kuis</span></div>
+                <div class="admin-chart">
+                    <div class="chart-y-labels">
+                        <span>100</span><span>75</span><span>50</span><span>25</span><span>0</span>
+                    </div>
+                    <div class="chart-bars">
+                        <?php foreach ($chart as $point): ?>
+                            <div class="chart-column">
+                                <div class="chart-bar-pair">
+                                    <div class="chart-bar score-bar" style="height:<?= max(3, $point['score']) ?>%"
+                                        title="Rata-rata nilai: <?= $point['score'] ?>"></div>
+                                    <div class="chart-bar attempt-bar"
+                                        style="height:<?= max(3, ($point['attempts'] / $maxAttempts) * 100) ?>%"
+                                        title="Jumlah kuis: <?= $point['attempts'] ?>"></div>
+                                </div>
+                                <span><?= e($point['label']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="admin-chart-summary">
+                    <div><strong><?= $avgScore ?></strong><span>Rata-rata nilai keseluruhan</span></div>
+                    <div><strong><?= $activeStudents ?></strong><span>Siswa aktif 7 hari terakhir</span></div>
+                </div>
+            </article>
+
+            <article class="admin-panel admin-quick-panel">
+                <div class="admin-panel-heading">
+                    <div>
+                        <h2>Akses Cepat</h2>
+                        <p>Kelola konten MathKids</p>
+                    </div>
+                </div>
+                <a class="admin-quick-link" href="materi.php"><span
+                        class="quick-icon purple">📚</span><span><strong>Tambah Materi</strong><small>Perbarui bahan
+                            belajar</small></span><b>›</b></a>
+                <a class="admin-quick-link" href="soal.php"><span
+                        class="quick-icon orange">🧠</span><span><strong>Tambah Soal</strong><small>Perkaya bank
+                            kuis</small></span><b>›</b></a>
+                <a class="admin-quick-link" href="siswa.php"><span
+                        class="quick-icon blue">👩‍🎓</span><span><strong>Lihat Siswa</strong><small>Pantau perkembangan
+                            siswa</small></span><b>›</b></a>
+                <div class="admin-tip"><span>💡</span>
+                    <p><strong>Tips admin</strong><br>Tambahkan soal sesuai kelas agar siswa mendapatkan latihan yang
+                        tepat.</p>
+                </div>
+            </article>
+        </div>
+
+        <div class="admin-bottom-grid">
+            <article class="admin-panel">
+                <div class="admin-panel-heading">
+                    <div>
+                        <h2>Aktivitas Kuis Terbaru</h2>
+                        <p>Hasil pengerjaan kuis dari siswa</p>
+                    </div><a class="admin-text-link" href="siswa.php">Lihat siswa →</a>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>SISWA</th>
+                                <th>KELAS</th>
+                                <th>NILAI</th>
+                                <th>JAWABAN</th>
+                                <th>WAKTU</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent as $r): ?>
+                                <tr>
+                                    <td>
+                                        <div class="admin-person"><span
+                                                class="admin-avatar"><?= e(strtoupper(substr($r['name'], 0, 1))) ?></span><strong><?= e($r['name']) ?></strong>
+                                        </div>
+                                    </td>
+                                    <td>Kelas <?= (int) $r['class'] ?></td>
+                                    <td><span
+                                            class="score-pill <?= $r['score'] >= 75 ? 'good' : 'low' ?>"><?= (int) $r['score'] ?></span>
+                                    </td>
+                                    <td><?= (int) $r['correct_answers'] ?>/<?= (int) $r['total_questions'] ?></td>
+                                    <td><?= e(date('d/m H:i', strtotime($r['created_at']))) ?></td>
+                                </tr><?php endforeach; ?>
+                            <?php if (!$recent): ?>
+                                <tr>
+                                    <td colspan="5" class="admin-empty">Belum ada aktivitas kuis.</td>
+                                </tr><?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="admin-panel">
+                <div class="admin-panel-heading">
+                    <div>
+                        <h2>Siswa Terbaru</h2>
+                        <p>Akun yang baru bergabung</p>
+                    </div><a class="admin-text-link" href="siswa.php">Semua →</a>
+                </div>
+                <div class="admin-student-list">
+                    <?php foreach ($newStudents as $s): ?>
+                        <div class="admin-student-row"><span
+                                class="admin-avatar"><?= e(strtoupper(substr($s['name'], 0, 1))) ?></span><span
+                                class="admin-student-info"><strong><?= e($s['name']) ?></strong><small><?= e($s['email']) ?></small></span><span
+                                class="admin-class-tag">K<?= (int) $s['class'] ?></span></div><?php endforeach; ?>
+                    <?php if (!$newStudents): ?>
+                        <div class="admin-empty">Belum ada siswa terdaftar.</div><?php endif; ?>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
