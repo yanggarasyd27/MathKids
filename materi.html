@@ -2,7 +2,7 @@
 require_once 'config/database.html'; require_once 'includes/functions.html'; require_login();
 $filter=max(1,min(6,(int)($_GET['kelas']??current_user()['class']??1)));
 $q=$pdo->prepare('SELECT m.*,c.name category_name FROM materials m LEFT JOIN categories c ON c.id=m.category_id WHERE m.class_level=? AND m.is_published=1 ORDER BY m.id'); $q->execute([$filter]); $materials=$q->fetchAll();
-$pageTitle='Materi'; require 'includes/header.php';
+$pageTitle='Materi'; require 'includes/header.html';
 ?>
 <div class="page-title"><div class="eyebrow">Perpustakaan matematika</div><h1>Materi Belajar 📚</h1><p>Pilih kelas untuk melihat materi yang sesuai.</p></div>
 <div class="admin-actions"><?php for($i=1;$i<=6;$i++): ?><a class="btn btn-small <?= $i===$filter?'':'btn-outline' ?>" href="?kelas=<?= $i ?>">Kelas <?= $i ?></a><?php endfor; ?></div>
