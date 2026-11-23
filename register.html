@@ -1,6 +1,6 @@
 <?php
-require_once 'config/database.php'; require_once 'includes/functions.php';
-if (is_logged_in()) redirect('dashboard.php');
+require_once 'config/database.html'; require_once 'includes/functions.html';
+if (is_logged_in()) redirect('dashboard.html');
 $errors=[];
 if ($_SERVER['REQUEST_METHOD']==='POST') {
  verify_csrf();
@@ -16,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
   else {
    $q=$pdo->prepare("INSERT INTO users(name,email,password,class,role) VALUES(?,?,?,?,'student')");
    $q->execute([$name,$email,password_hash($password,PASSWORD_DEFAULT),$class]);
-   flash('Akun berhasil dibuat. Silakan masuk!'); redirect('login.php');
+   flash('Akun berhasil dibuat. Silakan masuk!'); redirect('login.html');
   }
  }
 }
-$pageTitle='Daftar'; require 'includes/header.php';
+$pageTitle='Daftar'; require 'includes/header.html';
 ?>
 <div class="form-card"><h1>Yuk, bergabung! 🌟</h1><p>Buat akun MathKids dan mulai petualangan matematikamu.</p>
 <?php foreach($errors as $err): ?><div class="alert error"><?= e($err) ?></div><?php endforeach; ?>
@@ -29,5 +29,5 @@ $pageTitle='Daftar'; require 'includes/header.php';
 <label>Email</label><input type="email" name="email" required value="<?= e($_POST['email']??'') ?>">
 <label>Kelas</label><select name="class" required><option value="">Pilih kelas</option><?php for($i=1;$i<=6;$i++): ?><option value="<?= $i ?>" <?= (($_POST['class']??'')==$i)?'selected':'' ?>>Kelas <?= $i ?></option><?php endfor; ?></select>
 <label>Kata sandi (minimal 8 karakter)</label><input type="password" name="password" minlength="8" required>
-<button class="btn">Buat Akun</button></form><p class="center" style="margin-top:18px">Sudah punya akun? <a href="login.php" style="color:#3978ed">Masuk</a></p></div>
-<?php require 'includes/footer.php'; ?>
+<button class="btn">Buat Akun</button></form><p class="center" style="margin-top:18px">Sudah punya akun? <a href="login.html" style="color:#3978ed">Masuk</a></p></div>
+<?php require 'includes/footer.html'; ?>
