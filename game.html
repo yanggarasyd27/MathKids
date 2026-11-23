@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/functions.php'; require_login(); $pageTitle='Game Berhitung'; require 'includes/header.php';
+require_once 'includes/functions.html'; require_login(); $pageTitle='Game Berhitung'; require 'includes/header.html';
 ?>
 <div class="page-title"><div class="eyebrow">Mini game</div><h1>Tantangan Berhitung 🎮</h1><p>Latih kecepatan berhitungmu. Jawab sebanyak mungkin dalam 60 detik!</p></div>
 <div class="card quiz-box center"><div class="stats"><div class="stat"><span>WAKTU</span><strong id="time">60</strong></div><div class="stat"><span>SKOR</span><strong id="score">0</strong></div><div class="stat"><span>LEVEL</span><strong id="level">1</strong></div><div class="stat"><span>REKOR SESI</span><strong id="best">0</strong></div></div>
@@ -12,4 +12,4 @@ $('start').onclick=()=>{score=0;time=60;active=true;$('score').textContent=0;$('
 $('game-form').onsubmit=e=>{e.preventDefault();if(!active)return;let v=Number($('game-answer').value);if($('game-answer').value==='')return;if(v===correct){score+=10;$('feedback').textContent='Benar! +10 poin ⭐'}else $('feedback').textContent=`Belum tepat. Jawaban: ${correct}`;$('score').textContent=score;$('level').textContent=Math.floor(score/50)+1;next();};
 })();
 </script>
-<?php require 'includes/footer.php'; ?>
+<?php require 'includes/footer.html'; ?>
