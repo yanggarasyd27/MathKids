@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_quiz'])) {
 $pageTitle='Kuis'; require 'includes/header.html';
 ?>
 <div class="page-title"><div class="eyebrow">Uji kemampuanmu</div><h1>Kuis Matematika 🧠</h1><p>Jawab soal sesuai kelasmu dan kumpulkan poin.</p></div>
-<?php if($result): ?><div class="card center quiz-box"><div style="font-size:55px">🎉</div><h2>Hebat! Kuis selesai.</h2><div class="big-score"><?= $result['score'] ?></div><p>Nilai kamu · <?= $result['correct'] ?> benar dari <?= $result['total'] ?> soal</p><a class="btn" href="kuis.html">Coba Lagi</a> <a class="btn btn-outline" href="riwayat.php">Lihat Riwayat</a></div>
+<?php if($result): ?><div class="card center quiz-box"><div style="font-size:55px">🎉</div><h2>Hebat! Kuis selesai.</h2><div class="big-score"><?= $result['score'] ?></div><p>Nilai kamu · <?= $result['correct'] ?> benar dari <?= $result['total'] ?> soal</p><a class="btn" href="kuis.html">Coba Lagi</a> <a class="btn btn-outline" href="riwayat.html">Lihat Riwayat</a></div>
 <?php elseif(!$questions): ?><div class="card empty">Belum ada soal untuk kelasmu. Silakan kembali lagi nanti.</div>
 <?php else: ?><form method="post" class="card quiz-box"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="submit_quiz" value="1">
 <div style="display:flex;justify-content:space-between"><span class="badge">Kelas <?= (int)$u['class'] ?></span><span class="muted"><?= count($questions) ?> soal</span></div>
