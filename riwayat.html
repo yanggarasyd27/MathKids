@@ -1,10 +1,10 @@
 <?php
-require_once 'config/database.php'; require_once 'includes/functions.php'; require_login();
+require_once 'config/database.html'; require_once 'includes/functions.html'; require_login();
 $q=$pdo->prepare('SELECT * FROM quiz_results WHERE user_id=? ORDER BY created_at DESC');$q->execute([current_user()['id']]);$rows=$q->fetchAll();
-$pageTitle='Riwayat Belajar';require 'includes/header.php';
+$pageTitle='Riwayat Belajar';require 'includes/header.html';
 ?>
 <div class="page-title"><div class="eyebrow">Perkembanganmu</div><h1>Riwayat Belajar 📈</h1><p>Lihat hasil kuis yang pernah kamu kerjakan.</p></div>
 <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Nilai</th><th>Benar</th><th>Total soal</th><th>Hasil</th></tr></thead><tbody>
 <?php foreach($rows as $r): ?><tr><td><?= e(date('d M Y H:i',strtotime($r['created_at']))) ?></td><td><strong><?= (int)$r['score'] ?></strong></td><td><?= (int)$r['correct_answers'] ?></td><td><?= (int)$r['total_questions'] ?></td><td><span class="badge"><?= $r['score']>=75?'Hebat!':'Terus berlatih' ?></span></td></tr><?php endforeach; ?>
 <?php if(!$rows): ?><tr><td colspan="5" class="empty">Belum ada riwayat kuis. Yuk, mulai kuis pertamamu!</td></tr><?php endif; ?></tbody></table></div>
-<?php require 'includes/footer.php'; ?>
+<?php require 'includes/footer.html'; ?>
