@@ -3,7 +3,7 @@ require_once 'config/database.html'; require_once 'includes/functions.html'; req
 $u=current_user(); $result=null; $questions=[];
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['submit_quiz'])) {
  verify_csrf(); $ids=$_POST['question_ids']??[]; $answers=$_POST['answer']??[];
- if (!$ids || count($ids)>30) { flash('Kuis tidak valid.','error'); redirect('kuis.php'); }
+ if (!$ids || count($ids)>30) { flash('Kuis tidak valid.','error'); redirect('kuis.html'); }
  $marks=0; $detail=[];
  $in=implode(',',array_fill(0,count($ids),'?'));
  $q=$pdo->prepare("SELECT id,correct_option FROM questions WHERE id IN ($in) AND is_published=1"); $q->execute(array_map('intval',$ids)); $correct=$q->fetchAll();
